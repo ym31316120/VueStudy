@@ -4,18 +4,51 @@
     <meta charset="UTF-8">
     <title>Title</title>
     <script src="./js/vue.global.js"></script>
+    <script src="https://unpkg.com/lodash@4.17.20/lodash.min.js"></script>
+    <!-- lodash  防抖库 -->
+    <script src="https://cdn.jsdelivr.net/npm/axios@0.12.0/dist/axios.min.js"></script>
+    <!-- axios  请求库 -->
 </head>
 <body>
     <div id="app">
         <p>{{message}}</p>
-        <button v-on:click="reverseMessage">反转Message</button>
+        <p>Use mustaches {{htmltext}}</p>
+        <p>Use html <span v-html="htmltext"></span></p>
+        <p :attr="message">22</p>
+        <button @click="reverseMessage">反转Message</button>
+
+        <button @click="debouncedClick">反转Message</button>
+        <p>
+            Ask a yes/no question:
+            <input v-model="question" />
+        </p>
+        <p>{{ answer }}</p>
     </div>
 </body>
 <script>
     const EventHandling = {
         data() {
             return {
-                message: 'Hello Vue.js'
+                question: '',
+                answer: 'Questions usually contain a question mark. ;-)',
+                count: 4,
+                message: 'Hello Vue.js',
+                htmltext: '<span style="color: red">this should be red.</span>'
+            }
+        },
+        created() {
+            // 使用 Lodash 实现防抖
+            this.debouncedClick = _.debounce(this.clicka, 500)
+        },
+        unmounted() {
+            // 移除组件时，取消定时器
+            this.debouncedClick.cancel()
+        },
+        watch: {
+            question(newQuestion,oldQuestion){
+                if (newQuestion.indexOf('?') > -1) {
+                    this.getAnswer()
+                }
             }
         },
         methods: {
@@ -24,10 +57,30 @@
                     .split('')
                     .reverse()
                     .join('')
+            },
+            clicka() {
+                console.log("触发按钮事件");
+            },
+            getAnswer() {
+                this.answer = 'Thinking...'
+                axios
+                    .get('https://yesno.wtf/api')
+                    .then(response => {
+                        this.answer = response.data.answer
+                    })
+                    .catch(error => {
+                        this.answer = 'Error! Could not reach the API. ' + error
+                    })
             }
         }
     }
 
-    Vue.createApp(EventHandling).mount("#app");
+    const vm = Vue.createApp(EventHandling).mount("#app");
+    console.log(vm.count);
+    console.log(vm.$data.count);
+    vm.$data.count = 5;
+    console.log(vm.count);
+    vm.count = 6;
+    console.log(vm.$data.count);
 </script>
 </html>
